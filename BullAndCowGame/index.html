@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Страница игры</title>
+</head>
+<body>
+    <style type="text/css">
+        .form {
+            display: none;
+        }
+
+        .form.is-active {
+            display: block;
+        }
+    </style>
+
+    <script type="text/javascript">
+        document.addEventListener("DOMContentLoaded", ready);
+
+        function ready() {
+            window.$forms         = document.querySelectorAll('form');
+            window.$authForm      = document.querySelector('.authForm');
+            window.$gameForm      = document.querySelector('.gameForm');
+            window.$userNameField = $gameForm.querySelector('.username');
+        
+            // скрываем все формы
+            $forms.forEach($item => $item.classList.remove('is-active'));
+
+            // проверяем авторизацию
+            if (checkAuth()) {
+                // запускаем игру
+                runGame();
+            }
+        }
+
+        function showForm($form) {
+            // скрываем все формы
+            $forms.forEach($item => $item.classList.remove('is-active'));
+
+            $form.classList.add('is-active');
+        }
+
+        function checkAuth() {
+            window.name = localStorage.getItem('name') === null ? '' : localStorage.getItem('name');
+
+            if (name !== null && name.length > 0) {
+                return true;
+            }
+
+            showForm($authForm);
+
+            $authForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                window.name = document.querySelector('input[name="name"]').value;
+
+                if (window.name.length > 0) {
+                    localStorage.setItem('name', window.name)
+                    runGame();
+                }
+            });
+        }
+
+        function getRandomArbitrary(min, max) {
+            return parseInt(Math.random() * (max - min) + min, 10);
+        }
+
+        function runGame() {
+            const $result = $gameForm.querySelector('.results');
+            const result  = localStorage.getItem('result') === null ? '' : localStorage.getItem('result');
+
+            $userNameField.textContent = window.name;
+            $result.innerHTML = result;
+
+            showForm($gameForm);
+
+            window.randomNumber = localStorage.getItem('randomNumber') === null ? 0 : parseInt(localStorage.getItem('randomNumber'), 10);
+
+            // придумываем число
+            if (window.randomNumber === 0) {
+                window.randomNumber = getRandomArbitrary(1000, 9999);
+                localStorage.setItem('randomNumber', window.randomNumber);
+            }
+            
+            $gameForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                window.answer = document.querySelector('input[name="number"]').value;
+
+                $result.innerHTML += window.answer + ' - ' + maginFn(window.answer) + "\n";
+
+                localStorage.setItem('result', $result.innerHTML);
+            });
+        }
+
+        function maginFn(number) {
+            console.log(window.randomNumber)
+            const source      = number.split('');
+            const destination = window.randomNumber.toString().split('');
+
+            let cowCount = 0,
+                bullCount = 0;
+
+            // bullCount
+            for (var i = 0; i < 4; i++) {
+                if (source[i] === destination[i]) {
+                    bullCount++;
+                }
+            }
+
+            // cowCount
+            cowCount = -bullCount;
+            for (var i = 0; i < 4; i++) {
+                for (var j = 0; j < 4; j++) {
+                    if (source[i] === destination[j]) {
+                        cowCount++;
+                        break;
+                    }
+                }
+            }
+
+            return `${bullCount}Б${cowCount}К`;
+        }
+    </script>
+    
+    <!-- Форма авторизации -->
+    <form class="authForm form">
+        <label>Имя: <input type="text" name="name" value=""></label>
+        <input type="submit" value="Играть">
+    </form>
+
+    <!-- Форма 2 -->
+    <form class="gameForm form">
+        <h1>Дарова, <span class="username">%user_name%</span></h1>
+        <label>Число из 4 цифр: <input type="number" min="1000" max="9999" name="number" value=""></label>
+        <input type="submit" value="Отправить">
+        <div>
+            <pre class="results"></pre>
+        </div>
+    </form>
+</body>
+</html>
